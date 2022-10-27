@@ -10,7 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vineBoomErrors.playBoom"
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -18,7 +18,6 @@
       {
         "command": "vineBoomErrors.playBoom",
         "title": "Plays the Vine boom sound effect",
-        "shortTitle": "*Vine boom*",
         "category": "VineBoomErrors"
       }
     ]
