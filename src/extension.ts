@@ -1,6 +1,7 @@
 // TODO Possibly ditch play-sound dependency and use find-exec as play-sound doesn't offer much and 
 //   can easily be replicated.
 // TODO Add configuration options.
+// TODO Add ability to disable vine boom on errors.
 
 import * as vscode from "vscode";
 const commands  		 = vscode.commands;

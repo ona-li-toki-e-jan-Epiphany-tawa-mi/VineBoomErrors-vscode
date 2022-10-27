@@ -1,14 +1,36 @@
 {
   "name": "vineboomerrors",
   "displayName": "VineBoomErrors",
-  "description": "Plays the Vine boom sound effect when your badly-written code throws errors",
-  "version": "0.0.1",
+  "description": "Plays the Vine boom sound effect when your badly-written code generates errors",
+  "version": "0.1.0",
+  "publisher": "ona li toki e jan Epiphany tawa mi",
+  "author": {
+    "name": "jan Epiphany"
+  },
+  "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "vscode": "^1.72.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Linters"
   ],
+  "keywords": [
+    "Vine",
+    "vineboom",
+    "Vine boom",
+    "funny",
+    "sound",
+    "errors"
+  ],
+  "bugs": {
+    "url": "https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/VineBoomErrors-vscode/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/VineBoomErrors-vscode.git"
+  },
+  "homepage": "https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/VineBoomErrors-vscode",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -17,7 +39,7 @@
     "commands": [
       {
         "command": "vineBoomErrors.playBoom",
-        "title": "Plays the Vine boom sound effect",
+        "title": "Play the Vine boom sound effect",
         "category": "VineBoomErrors"
       }
     ]
