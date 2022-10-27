@@ -11,6 +11,7 @@
   "engines": {
     "vscode": "^1.72.0"
   },
+  "icon": "images/icon.png",
   "categories": [
     "Other",
     "Linters"

@@ -1,3 +1,5 @@
+![VineBoomErrors Logo](images/icon.png)
+
 # VineBoomErrors
 
 Plays the Vine boom sound effect when your badly-written code generates errors.
@@ -27,3 +29,7 @@ Initial release.
 ### 0.1.0
 
 Initial release.
+
+## Copyright
+
+The logo is derived from Vine's logo © 2018 Twitter, Inc.
