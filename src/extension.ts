@@ -1,7 +1,7 @@
 // TODO Possibly ditch play-sound dependency and use find-exec as play-sound doesn't offer much and 
 //   can easily be replicated.
-// TODO Add configuration options.
-// TODO Add ability to disable vine boom on errors.
+// TODO Possibly add configuration options for which players to use.
+// TODO Possible add config option to select error severity.
 
 import * as vscode from "vscode";
 const commands  		 = vscode.commands;
@@ -35,18 +35,19 @@ function playFile(filePath: string) {
 }
 
 /**
- * Plays the given audio file {count} times, spaced out by some delay.
+ * Plays the given audio file {count} times, spaced out by given delay, in milliseconds.
  * 
- * @param filePath audio file path.
- * @param count    number of times to play it.
+ * @param filePath  audio file path.
+ * @param count     number of times to play it.
+ * @param delay     amount of time to space out each play by.
  */
-function loopPlayFile(filePath: string, count: number) {
-	let delay = 0;
+function loopPlayFile(filePath: string, count: number, delay: number) {
+	let delayAccumulator = 0;
 
 	for (; count > 0; count--) {
 		setTimeout( () => playFile(filePath)
-			      , delay);
-		delay += 100;	
+			      , delayAccumulator);
+		delayAccumulator += delay;	
 	}
 }
 
@@ -64,9 +65,11 @@ let errorHistory: Dictonary<number> = {};
 
 /**
  * Produces a Vine boom for every *new* error found from static analysis.
+ * 
  * @param vineBoomFile path to the file containing the Vine boom effect.
+ * @param delay amount of time to space out each Vine boom by.
  */
-function vineboomForErrors(event: vscode.DiagnosticChangeEvent, vineBoomFile: string) {
+function vineboomForErrors(event: vscode.DiagnosticChangeEvent, vineBoomFile: string, delay: number) {
 	for (const URI of event.uris) {
 		let URIString = URI.toString();
 		
@@ -80,7 +83,7 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent, vineBoomFile: st
 			boomableErrors -= errorHistory[URIString];
 
 		if (boomableErrors > 0) 
-			loopPlayFile(vineBoomFile, boomableErrors);
+			loopPlayFile(vineBoomFile, boomableErrors, delay);
 
 		errorHistory[URIString] = errors;
 	} 
@@ -89,14 +92,20 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent, vineBoomFile: st
 
 
 export function activate(context: vscode.ExtensionContext) {
-	const vineBoomFile = `${context.extensionPath}/audio/vineboom.mp3`;
+	const configuration = vscode.workspace.getConfiguration("vineBoomErrors");
+	const vineBoomFile: string = configuration.get("soundEffectLocation") || 
+								 `${context.extensionPath}/audio/vineboom.mp3`;
 
 	let playBoom = commands.registerCommand("vineBoomErrors.playBoom", () =>
 		playFile(vineBoomFile));
 	context.subscriptions.push(playBoom);
 
-	vscode.languages.onDidChangeDiagnostics((event: vscode.DiagnosticChangeEvent) =>
-		vineboomForErrors(event, vineBoomFile));
+	vscode.languages.onDidChangeDiagnostics((event: vscode.DiagnosticChangeEvent) => {
+		if (configuration.get("playBoomOnError")) {
+			let delay: number = configuration.get("delay") || 100;
+			vineboomForErrors(event, vineBoomFile, delay);
+		}
+	});
 }
 
 export function deactivate() {}

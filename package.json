@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/VineBoomErrors-vscode",
   "activationEvents": [
+    "onCommand:vineBoomErrors.playBoom",
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
@@ -42,7 +43,28 @@
         "title": "Play the Vine boom sound effect",
         "category": "VineBoomErrors"
       }
-    ]
+    ],
+    "configuration":{
+      "title": "VineBoomErrors",
+      "properties": {
+        "vineBoomErrors.playBoomOnError": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, plays the Vine boom sound effect when an error is produced by a linter or static analysis."
+        },
+        "vineBoomErrors.soundEffectLocation": {
+          "type": "string",
+          "default": "",
+          "description": "If left blank, uses the Vine boom sound stored in the extension directory. You can put a path to another sound file to change the sound played."
+        },
+        "vineBoomErrors.delay": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "description": "The time, in milliseconds, to space apart each Vine boom."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
