@@ -19,6 +19,14 @@ const spawn    = require("child_process").spawn;
 
 
 
+let _vineBoomFile: string | undefined = undefined;
+function getVineBoomFile(): string {
+	if (!_vineBoomFile)
+		throw 'Vine boom file path not set!'
+
+	return _vineBoomFile;
+}
+
 // Must be mp3 compatible.
 // TODOO: omxplayer and cmdmp3win have not been tested.
 const players = [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
@@ -28,6 +36,11 @@ const players = [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
 // Various options to make sure players don't open any windows and exit when done.
 const playerOptions: Dictonary<string[]> = { ffplay: ["-nodisp", "-autoexit"]
 	                  					   , cvlc:   ["--play-and-exit"]};
+
+// Delay between consecutive file plays when using loopPlayFile().
+let delay = 100;
+
+
 
 let _player: string | null = null;
 /**
@@ -41,7 +54,7 @@ function getPlayer(): string {
 		_player = findExec(players);
 
 		if (!_player)
-			throw `Unable to find any sound players on the system (attempted to look for ${players})`;
+			throw `Unable to find any sound players on the system! (attempted to look for ${players})`;
 	}
 
 	return _player;
@@ -56,11 +69,6 @@ async function playFile(filePath: string) {
 	const args         = (playerOptions[player] || []).concat(filePath);
 	const audioProcess = spawn(player, args);
 
-	if (!audioProcess) {
-		window.showErrorMessage("Unable to find any executables for playing sound");
-		return
-	}
-	
 	audioProcess.on('error', (code: number) =>
 		window.showErrorMessage(`Something went wrong while trying to play "${filePath}" with ${player}. Error code: ${code}`));
 
@@ -77,13 +85,12 @@ async function playFile(filePath: string) {
  * @param delay     amount of time to space out each play by.
  */
 function loopPlayFile(filePath: string, count: number, delay: number) {
-	let delayAccumulator = 0;
+	if (count === 0)
+		return;
 
-	for (; count > 0; count--) {
-		setTimeout( () => playFile(filePath)
-			      , delayAccumulator);
-		delayAccumulator += delay;	
-	}
+	playFile(filePath);
+	setTimeout( () => loopPlayFile(filePath, count - 1, delay)
+			  , delay);
 }
 
 
@@ -93,13 +100,10 @@ let errorHistory: Dictonary<number> = {};
 
 /**
  * Produces a Vine boom for every *new* error found from static analysis.
- * 
- * @param vineBoomFile path to the file containing the Vine boom effect.
- * @param delay amount of time to space out each Vine boom by.
  */
-function vineboomForErrors(event: vscode.DiagnosticChangeEvent, vineBoomFile: string, delay: number) {
+function vineboomForErrors(event: vscode.DiagnosticChangeEvent) {
 	for (const URI of event.uris) {
-		let URIString = URI.toString();
+		const URIString = URI.toString();
 		
 		let errors = 0;
 		for (const diagnostic of languages.getDiagnostics(URI))
@@ -111,7 +115,7 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent, vineBoomFile: st
 			boomableErrors -= errorHistory[URIString];
 
 		if (boomableErrors > 0) 
-			loopPlayFile(vineBoomFile, boomableErrors, delay);
+			loopPlayFile(getVineBoomFile(), boomableErrors, delay);
 
 		errorHistory[URIString] = errors;
 	} 
@@ -121,18 +125,19 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent, vineBoomFile: st
 
 export function activate(context: vscode.ExtensionContext) {
 	const configuration = vscode.workspace.getConfiguration("vineBoomErrors");
-	const vineBoomFile: string = configuration.get("soundEffectLocation") || 
-								 `${context.extensionPath}/audio/vineboom.mp3`;
+	_vineBoomFile = configuration.get("soundEffectLocation") || 
+					`${context.extensionPath}/audio/vineboom.mp3`;
+	delay = configuration.get("delay") || delay;
+	const playBoomOnError = configuration.get("playBoomOnError");
 
-	let playBoom = commands.registerCommand("vineBoomErrors.playBoom", () =>
-		playFile(vineBoomFile));
+
+	const playBoom = commands.registerCommand("vineBoomErrors.playBoom", () =>
+		playFile(getVineBoomFile()));
 	context.subscriptions.push(playBoom);
 
 	vscode.languages.onDidChangeDiagnostics((event: vscode.DiagnosticChangeEvent) => {
-		if (configuration.get("playBoomOnError")) {
-			let delay: number = configuration.get("delay") || 100;
-			vineboomForErrors(event, vineBoomFile, delay);
-		}
+		if (playBoomOnError) 
+			vineboomForErrors(event);
 	});
 }
 
