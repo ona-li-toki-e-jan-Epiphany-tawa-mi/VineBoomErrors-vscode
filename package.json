@@ -45,7 +45,7 @@
         "category": "VineBoomErrors"
       }
     ],
-    "configuration":{
+    "configuration": {
       "title": "VineBoomErrors",
       "properties": {
         "vineBoomErrors.playBoomOnError": {
@@ -95,6 +95,6 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
-    "play-sound": "^1.1.5"
+    "find-exec": "^1.0.2"
   }
 }

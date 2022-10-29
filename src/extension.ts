@@ -1,5 +1,3 @@
-// TODO Possibly ditch play-sound dependency and use find-exec as play-sound doesn't offer much and 
-//   can easily be replicated.
 // TODO Possibly add configuration options for which players to use.
 // TODO Possible add config option to select error severity.
 
@@ -9,29 +7,66 @@ const window      		 = vscode.window;
 const languages			 = vscode.languages;
 const DiagnosticSeverity = vscode.DiagnosticSeverity;
 
-const playsound = require("play-sound")({
-	// Must be mp3 compatible.
-	// TODOO: omxplayer and cmdmp3win have not been tested.
-	players: [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
-             , "cvlc" /* from VLC */, "play" /* from SoX (and possibly play.exe on Windows, not sure. */
-			 , "mpg123", "mpg321" /* Same player, different name */]
-});
+const findExec = require("find-exec");
+const spawn    = require("child_process").spawn;
+
+/**
+ * A mapping between string keys and a given type. Just objects with a specified value type.
+ */
+ interface Dictonary<Type> {
+	[key: string]: Type;
+};
 
 
+
+// Must be mp3 compatible.
+// TODOO: omxplayer and cmdmp3win have not been tested.
+const players = [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
+                , "cvlc" /* from VLC */, "play" /* from SoX(?) */
+			    , "mpg123", "mpg321" /* Same player, different name */]
 
 // Various options to make sure players don't open any windows and exit when done.
-const playerOptions = { ffplay: ["-nodisp", "-autoexit"]
-	                  , cvlc:   ["--play-and-exit"]};
+const playerOptions: Dictonary<string[]> = { ffplay: ["-nodisp", "-autoexit"]
+	                  					   , cvlc:   ["--play-and-exit"]};
+
+let _player: string | null = null;
+/**
+ * Gets the first available player on the system.
+ *
+ * @returns The player.
+ * @throws If there are no available players.
+ */
+function getPlayer(): string {
+	if (!_player) {
+		_player = findExec(players);
+
+		if (!_player)
+			throw `Unable to find any sound players on the system (attempted to look for ${players})`;
+	}
+
+	return _player;
+}
 
 /**
  * Plays the given audio file with one of the available players.
  * @param filePath audio file path.
  */
-function playFile(filePath: string) {
-	playsound.play(filePath, playerOptions, (error: any) => {
-		if (error)
-			window.showErrorMessage(`Error: unable to play file ${filePath}. Cause: ${error}`);
-	});
+async function playFile(filePath: string) {
+	const player       = getPlayer();
+	const args         = (playerOptions[player] || []).concat(filePath);
+	const audioProcess = spawn(player, args);
+
+	if (!audioProcess) {
+		window.showErrorMessage("Unable to find any executables for playing sound");
+		return
+	}
+	
+	audioProcess.on('error', (code: number) =>
+		window.showErrorMessage(`Something went wrong while trying to play "${filePath}" with ${player}. Error code: ${code}`));
+
+	const onClose = new Promise((resolve) =>
+		audioProcess.on('close', resolve));
+	await onClose;
 }
 
 /**
@@ -52,13 +87,6 @@ function loopPlayFile(filePath: string, count: number, delay: number) {
 }
 
 
-
-/**
- * A mapping between string keys and a given type. Just objects with a specified value type.
- */
-interface Dictonary<Type> {
-	[key: string]: Type;
-};
 
 // Stores previous error counts so we don't Vine boom unnecessarily ;).
 let errorHistory: Dictonary<number> = {};

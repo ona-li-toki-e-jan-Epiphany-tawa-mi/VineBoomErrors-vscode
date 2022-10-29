@@ -43,14 +43,6 @@ code --install-extension <package name goes here>
 ```
 
 Make sure to reload or restart Visual Studio Code after installing .
-  
-## Release Notes
-
-Initial release.
-
-### 0.1.0
-
-Initial release.
 
 ## Copyright
 
