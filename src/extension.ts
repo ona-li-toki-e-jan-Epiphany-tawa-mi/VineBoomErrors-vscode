@@ -1,9 +1,11 @@
 // TODO Possible add config option to select error severity.
+// TODO Ensure sound file exists.
 
 import * as vscode from "vscode";
 const commands  		 = vscode.commands;
 const window      		 = vscode.window;
 const languages			 = vscode.languages;
+const workspace          = vscode.workspace;
 const DiagnosticSeverity = vscode.DiagnosticSeverity;
 
 const findExec = require("find-exec");
@@ -12,11 +14,13 @@ import { spawn } from "child_process";
 /**
  * A mapping between string keys and a given type. Just objects with a specified value type.
  */
- interface Dictonary<Type> {
+ interface Dictionary<Type> {
 	[key: string]: Type;
 };
 
 
+
+let playBoomOnError = true;
 
 let _vineBoomFile: string | undefined = undefined;
 function getVineBoomFile(): string {
@@ -30,14 +34,44 @@ function getVineBoomFile(): string {
 // TODOO: omxplayer and cmdmp3win have not been tested.
 let players = [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
               , "cvlc" /* from VLC */, "play" /* from SoX(?) */
-			  , "mpg123", "mpg321" /* Same player, different name */]
+			  , "mpg123", "mpg321" /* Same player, different name */];
 
 // Various options to make sure players don't open any windows and exit when done.
-let playerOptions: Dictonary<string[]> = { ffplay: ["-nodisp", "-autoexit"]
+let playerOptions: Dictionary<string[]> = { ffplay: ["-nodisp", "-autoexit"]
 	                  					 , cvlc:   ["--play-and-exit"]};
 
 // Delay between consecutive file plays when using loopPlayFile().
 let delay = 100;
+
+/**
+ * Loads data from the configuration into the global namespace.
+ * @param event Leave null if not calling from workspace.onDidChangeConfiguration().
+ */
+function loadConfiguration(context: vscode.ExtensionContext, event: vscode.ConfigurationChangeEvent | null = null) {
+	// If a ConfigurationChangeEvent and it isn't for us we don't need to do anything.
+	if (event && !event.affectsConfiguration("vineBoomErrors"))
+		return;
+	
+	const configuration = workspace.getConfiguration("vineBoomErrors");
+
+	// Conditional assignments are used to satisfy TypeScript's typechecker. || is only used when a 
+	// 		value being falsy is an invalid state, otherwise could lead to valid values being rejected.
+	const tempPlayBoomOnError = configuration.get("playBoomOnError");
+	playBoomOnError           = typeof tempPlayBoomOnError === "boolean" ? tempPlayBoomOnError 
+																		 : playBoomOnError;
+
+	_vineBoomFile = configuration.get("soundEffectLocation") || 
+					`${context.extensionPath}/audio/vineboom.mp3`;
+
+	const tempDelay = configuration.get("delay");
+	delay 			= typeof tempDelay === "number" ? tempDelay : delay;
+
+	const tempPlayers = configuration.get("players");
+	players = Array.isArray(tempPlayers) ? tempPlayers : players
+
+	const tempPlayerOptions: Dictionary<string[]> | undefined = configuration.get("playerOptions");
+	playerOptions = typeof tempPlayerOptions === "object" ? tempPlayerOptions : playerOptions;
+}
 
 
 
@@ -95,7 +129,7 @@ function loopPlayFile(filePath: string, count: number, delay: number) {
 
 
 // Stores previous error counts so we don't Vine boom unnecessarily ;).
-let errorHistory: Dictonary<number> = {};
+let errorHistory: Dictionary<number> = {};
 
 /**
  * Produces a Vine boom for every *new* error found from static analysis.
@@ -123,23 +157,19 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent) {
 
 
 export function activate(context: vscode.ExtensionContext) {
-	const configuration   = vscode.workspace.getConfiguration("vineBoomErrors");
-	const playBoomOnError = configuration.get("playBoomOnError");
-	_vineBoomFile = configuration.get("soundEffectLocation") || 
-					`${context.extensionPath}/audio/vineboom.mp3`;
-	delay         = configuration.get("delay") || delay;
-	players       = configuration.get("players") || players;
-	playerOptions = configuration.get("playerOptions") || playerOptions;
-
+	loadConfiguration(context);
 
 	const playBoom = commands.registerCommand("vineBoomErrors.playBoom", () =>
 		playFile(getVineBoomFile()));
 	context.subscriptions.push(playBoom);
 
-	vscode.languages.onDidChangeDiagnostics((event: vscode.DiagnosticChangeEvent) => {
+	languages.onDidChangeDiagnostics((event: vscode.DiagnosticChangeEvent) => {
 		if (playBoomOnError) 
 			vineboomForErrors(event);
 	});
+
+	workspace.onDidChangeConfiguration((event: vscode.ConfigurationChangeEvent) => 
+		loadConfiguration(context, event));
 }
 
 export function deactivate() {}

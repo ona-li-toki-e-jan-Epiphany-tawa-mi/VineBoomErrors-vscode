@@ -72,7 +72,7 @@
           "items": {
             "type": "string"
           },
-          "description": "The command-line players to play the Vine boom effect with. Uses the first one found to be present, searching from first to last. If one of the present players causes issues, remove it. If your player is not present, add it to the front. Must be compatible with MP3s."
+          "description": "The command-line players to play the Vine boom effect with. Uses the first one found to be present, searching from first to last. If one of the present players causes issues, remove it. If your player is not present, add it to the front. Must be compatible with MP3s. Reload for changes to take effect."
         },
         "vineBoomErrors.playerOptions": {
           "type": "object",
