@@ -63,6 +63,13 @@
           "default": 100,
           "minimum": 0,
           "description": "The time, in milliseconds, to space apart each Vine boom."
+        },
+        "vineBoomErrors.players": {
+          "type": "array",
+          "default": [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win", "cvlc", "play", "mpg123"
+                     , "mpg321"],
+          "minItems": 1,
+          "description": "The command-line players to play the Vine boom effect with. Uses the first one found to be present, searching from left to right. If one of the present players causes issues, remove it. If your player is not present, add it to the front. Must be compatible with MP3s."
         }
       }
     }

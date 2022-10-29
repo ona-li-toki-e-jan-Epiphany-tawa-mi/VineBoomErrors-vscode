@@ -1,4 +1,3 @@
-// TODO Possibly add configuration options for which players to use.
 // TODO Possible add config option to select error severity.
 
 import * as vscode from "vscode";
@@ -8,7 +7,7 @@ const languages			 = vscode.languages;
 const DiagnosticSeverity = vscode.DiagnosticSeverity;
 
 const findExec = require("find-exec");
-const spawn    = require("child_process").spawn;
+import { spawn } from "child_process";
 
 /**
  * A mapping between string keys and a given type. Just objects with a specified value type.
@@ -29,9 +28,9 @@ function getVineBoomFile(): string {
 
 // Must be mp3 compatible.
 // TODOO: omxplayer and cmdmp3win have not been tested.
-const players = [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
-                , "cvlc" /* from VLC */, "play" /* from SoX(?) */
-			    , "mpg123", "mpg321" /* Same player, different name */]
+let players = [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
+              , "cvlc" /* from VLC */, "play" /* from SoX(?) */
+			  , "mpg123", "mpg321" /* Same player, different name */]
 
 // Various options to make sure players don't open any windows and exit when done.
 const playerOptions: Dictonary<string[]> = { ffplay: ["-nodisp", "-autoexit"]
@@ -125,10 +124,11 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent) {
 
 export function activate(context: vscode.ExtensionContext) {
 	const configuration = vscode.workspace.getConfiguration("vineBoomErrors");
+	const playBoomOnError = configuration.get("playBoomOnError");
 	_vineBoomFile = configuration.get("soundEffectLocation") || 
 					`${context.extensionPath}/audio/vineboom.mp3`;
 	delay = configuration.get("delay") || delay;
-	const playBoomOnError = configuration.get("playBoomOnError");
+	players = configuration.get("players") || players;
 
 
 	const playBoom = commands.registerCommand("vineBoomErrors.playBoom", () =>

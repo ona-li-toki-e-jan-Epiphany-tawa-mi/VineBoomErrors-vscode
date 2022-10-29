@@ -12,7 +12,7 @@ Plays the Vine boom sound effect when your badly-written code generates errors.
 ## Configuration
 
 - `vineBoomErrors.playBoomOnError`
-    - If true, plays the Vine boom sound effect when an error is produced by a linter or static analysis.
+    - If `true`, plays the Vine boom sound effect when an error is produced by a linter or static analysis.
     - Default: `true`  
 - `vineBoomErrors.soundEffectLocation`
     - If left blank, uses the Vine boom sound stored in the extension directory. You can put a path to another sound file to change the sound played.
@@ -21,6 +21,9 @@ Plays the Vine boom sound effect when your badly-written code generates errors.
     - The time, in milliseconds, to space apart each Vine boom.
     - Allowable values: `non-negative`
     - Default: `100`
+- `vineBoomErrors.players`
+    - The command-line players to play the Vine boom effect with. Uses the first one found to be present, searching from left to right. If one of the present players causes issues, remove it. If your player is not present, add it to the front. Must be compatible with MP3s.
+    - Default: `["mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win", "cvlc", "play", "mpg123"]`
 
 ## How to build
 
