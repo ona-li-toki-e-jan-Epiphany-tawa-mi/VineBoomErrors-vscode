@@ -8,3 +8,4 @@
 - Added ability to configure which audio players to use.
 - Added ability to configure what arguments are used with which audio players.
 - Configuration changes are now loaded live and only one remains that still requires reloading.
+- Added ability to configure at which error severity level to play the Vine boom.

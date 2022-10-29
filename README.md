@@ -23,11 +23,15 @@ Plays the Vine boom sound effect when your badly-written code generates errors.
     - Default: `100`
 - `vineBoomErrors.players`
     - The command-line players to play the Vine boom effect with. Uses the first one found to be present, searching from left to right. If one of the present players causes issues, remove it. If your player is not present, add it to the front. Must be compatible with MP3s.
-    - Default: `["mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win", "cvlc", "play", "mpg123"]`
+    - Default: `"mplayer"`, `"mpv"`, `"ffplay"`, `"omxplayer"`, `"cmdmp3win"`, `"cvlc"`, `"play"`, `"mpg123"`
     - Reload for changes to take effect.
 - `vineBoomErrors.playerOptions`
     - Command-line options to supply to the players. Keys are the names of the players and must be the same as in `vineBoomErrors.players`. At a minimum, any options that close the player after playing and prevent it from opening any windows are required if that is not the default behavior.
-    - Default: `{"ffplay": ["-nodisp", "-autoexit"], "cvlc": ["--play-and-exit"]}`
+    - Default: `"ffplay": ["-nodisp", "-autoexit"]`, `"cvlc": ["--play-and-exit"]`
+- `vineBoomErrors.minimumSeverity`
+    - The minimum diagnostic severity level at which to play the Vine boom. Choosing an option also chooses all of the options before it.
+    - Allowable values: `"Error"`, `"Warning"`, `"Information"`, `"Hint"`
+    - Default: `"Error"`
 
 ## How to build
 

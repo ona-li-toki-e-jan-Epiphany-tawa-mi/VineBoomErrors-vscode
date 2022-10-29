@@ -21,58 +21,72 @@ const R_OK = fs.constants.R_OK;
 
 
 
+// Whether to play the Vine boom if an error occurs.
 let playBoomOnError = true;
-
-let _vineBoomFile: string | undefined = undefined;
-function getVineBoomFile(): string {
-	if (!_vineBoomFile)
-		throw 'Vine boom file path not set!'
-
-	return _vineBoomFile;
-}
-
-// Must be mp3 compatible.
+// The sound effect to use. Defaults to the Vine boom.
+// @ts-ignore
+let vineBoomFile: string = undefined;
+// Players with which to play the Vine boom. Must be mp3 compatible.
 // TODOO: omxplayer and cmdmp3win have not been tested.
 let players = [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
               , "cvlc" /* from VLC */, "play" /* from SoX(?) */
 			  , "mpg123", "mpg321" /* Same player, different name */];
-
 // Various options to make sure players don't open any windows and exit when done.
 let playerOptions: Dictionary<string[]> = { ffplay: ["-nodisp", "-autoexit"]
-	                  					 , cvlc:   ["--play-and-exit"]};
-
+	                  					  , cvlc:   ["--play-and-exit"]};
 // Delay between consecutive file plays when using loopPlayFile().
 let delay = 100;
+// The minimum diagnostic severity level at which to play the Vine boom.
+let minimumSeverity: string = "Error";
 
 /**
  * Loads data from the configuration into the global namespace.
+ * Must be called once at activation.
+ * 
  * @param event Leave null if not calling from workspace.onDidChangeConfiguration().
  */
 function loadConfiguration(context: vscode.ExtensionContext, 
 						   event: vscode.ConfigurationChangeEvent | null = null) {
-	// If a ConfigurationChangeEvent and it isn't for us we don't need to do anything.
+	function throwNoFetch(configurationName: string, recievedValue: any) {
+		throw `ERROR: Unable to fetch configuration "vineBoomErrors.${configurationName}"! Recieved: ${playBoomOnError}`;
+	}
+
+	// If a ConfigurationChangeEvent occurs and it isn't for us we don't need to do anything.
 	if (event && !event.affectsConfiguration("vineBoomErrors"))
 		return;
 	
 	const configuration = workspace.getConfiguration("vineBoomErrors");
 
-	// Conditional assignments are used to satisfy TypeScript's typechecker. || is only used when a 
-	// 		value being falsy is an invalid state, otherwise could lead to valid values being rejected.
-	const tempPlayBoomOnError = configuration.get("playBoomOnError");
-	playBoomOnError           = typeof tempPlayBoomOnError === "boolean" ? tempPlayBoomOnError 
-																		 : playBoomOnError;
+	// @ts-ignore
+	playBoomOnError = configuration.get("playBoomOnError");
+	if (typeof playBoomOnError !== "boolean")
+		throwNoFetch("playBoomOnError", playBoomOnError);
 
-	_vineBoomFile = configuration.get("soundEffectLocation") || 
-				    `${context.extensionPath}/audio/vineboom.mp3`;
+	// @ts-ignore
+	vineBoomFile = configuration.get("soundEffectLocation")
+	if (typeof vineBoomFile !== "string")
+		throwNoFetch("soundEffectLocation", vineBoomFile);
+	vineBoomFile ||= `${context.extensionPath}/audio/vineboom.mp3`;
 	
-	const tempDelay = configuration.get("delay");
-	delay 			= typeof tempDelay === "number" ? tempDelay : delay;
+	// @ts-ignore
+	delay = configuration.get("delay");
+	if (typeof delay !== "number")
+		throwNoFetch("delay", delay);
 
-	const tempPlayers = configuration.get("players");
-	players = Array.isArray(tempPlayers) ? tempPlayers : players
+	// @ts-ignore
+	players = configuration.get("players");
+	if (!Array.isArray(players))
+		throwNoFetch("players", players);
 
-	const tempPlayerOptions: Dictionary<string[]> | undefined = configuration.get("playerOptions");
-	playerOptions = typeof tempPlayerOptions === "object" ? tempPlayerOptions : playerOptions;
+	// @ts-ignore
+	playerOptions = configuration.get("playerOptions");
+	if (typeof playerOptions !== "object")
+		throwNoFetch("playerOptions", playerOptions);
+
+	// @ts-ignore
+	minimumSeverity = configuration.get("minimumSeverity");
+	if (!(minimumSeverity in DiagnosticSeverity))
+		throwNoFetch("minimumSeverity", minimumSeverity);
 }
 
 
@@ -103,7 +117,7 @@ async function playFile(filePath: string) {
 	try {
 		fs.accessSync(filePath, R_OK);
 	} catch (error) {
-		throw `An error occured while trying to open sound file "${_vineBoomFile}"; unable to open!". Description: ${error}`;
+		throw `An error occured while trying to open sound file "${vineBoomFile}"; unable to open!". Description: ${error}`;
 	}
 
 	const player       = getPlayer();
@@ -152,7 +166,8 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent) {
 		
 		let errors = 0;
 		for (const diagnostic of languages.getDiagnostics(URI))
-			if (diagnostic.severity <= DiagnosticSeverity.Error)
+			// @ts-ignore
+			if (diagnostic.severity <= DiagnosticSeverity[minimumSeverity])
 				errors++;
 
 		let boomableErrors = errors;
@@ -160,7 +175,7 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent) {
 			boomableErrors -= errorHistory[URIString];
 
 		if (boomableErrors > 0) 
-			loopPlayFile(getVineBoomFile(), boomableErrors, delay);
+			loopPlayFile(vineBoomFile, boomableErrors, delay);
 
 		errorHistory[URIString] = errors;
 	} 
@@ -172,7 +187,7 @@ export function activate(context: vscode.ExtensionContext) {
 	loadConfiguration(context);
 
 	const playBoom = commands.registerCommand("vineBoomErrors.playBoom", () =>
-		playFile(getVineBoomFile()));
+		playFile(vineBoomFile));
 	context.subscriptions.push(playBoom);
 
 	languages.onDidChangeDiagnostics((event: vscode.DiagnosticChangeEvent) => {

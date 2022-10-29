@@ -87,6 +87,18 @@
             }
           },
           "description": "Command-line options to supply to the players. Keys are the names of the players and must be the same as in vineBoomErrors.players. At a minimum, any options that close the player after playing and prevent it from opening any windows are required if that is not the default behavior."
+        },
+        "vineBoomErrors.minimumSeverity": {
+          "type": "string",
+          "enum": ["Error", "Warning", "Information", "Hint"],
+          "enumDescriptions": [
+            "Something not allowed by the rules of a language or other means.",
+            "Something suspicious but allowed.",
+            "Something to inform about but not a problem.",
+            "Something to hint to a better way of doing it, like proposing a refactoring."
+          ],
+          "default": "Error",
+          "description": "The minimum diagnostic severity level at which to play the Vine boom. Choosing an option also chooses all of the options before it."
         }
       }
     }
