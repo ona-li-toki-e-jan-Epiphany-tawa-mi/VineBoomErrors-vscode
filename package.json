@@ -2,7 +2,7 @@
   "name": "vineboomerrors",
   "displayName": "VineBoomErrors",
   "description": "Plays the Vine boom sound effect when your badly-written code generates errors",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "publisher": "onalitokiejanEpiphanytawami",
   "author": {
     "name": "ona li toki e jan Epiphany tawa mi"
@@ -45,7 +45,7 @@
         "category": "VineBoomErrors"
       }
     ],
-    "configuration":{
+    "configuration": {
       "title": "VineBoomErrors",
       "properties": {
         "vineBoomErrors.playBoomOnError": {
@@ -63,6 +63,42 @@
           "default": 100,
           "minimum": 0,
           "description": "The time, in milliseconds, to space apart each Vine boom."
+        },
+        "vineBoomErrors.players": {
+          "type": "array",
+          "default": [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win", "cvlc", "play", "mpg123"
+                     , "mpg321"],
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "description": "The command-line players to play the Vine boom effect with. Uses the first one found to be present, searching from first to last. If one of the present players causes issues, remove it. If your player is not present, add it to the front. Must be compatible with MP3s. Reload for changes to take effect."
+        },
+        "vineBoomErrors.playerOptions": {
+          "type": "object",
+          "default": {
+            "ffplay": ["-nodisp", "-autoexit"],
+            "cvlc": ["--play-and-exit"]
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": "Command-line options to supply to the players. Keys are the names of the players and must be the same as in vineBoomErrors.players. At a minimum, any options that close the player after playing and prevent it from opening any windows are required if that is not the default behavior."
+        },
+        "vineBoomErrors.minimumSeverity": {
+          "type": "string",
+          "enum": ["Error", "Warning", "Information", "Hint"],
+          "enumDescriptions": [
+            "Something not allowed by the rules of a language or other means.",
+            "Something suspicious but allowed.",
+            "Something to inform about but not a problem.",
+            "Something to hint to a better way of doing it, like proposing a refactoring."
+          ],
+          "default": "Error",
+          "description": "The minimum diagnostic severity level at which to play the Vine boom. Choosing an option also chooses all of the options before it."
         }
       }
     }
@@ -95,6 +131,6 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
-    "play-sound": "^1.1.5"
+    "find-exec": "^1.0.2"
   }
 }

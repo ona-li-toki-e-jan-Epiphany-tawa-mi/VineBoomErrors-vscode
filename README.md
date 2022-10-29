@@ -12,7 +12,7 @@ Plays the Vine boom sound effect when your badly-written code generates errors.
 ## Configuration
 
 - `vineBoomErrors.playBoomOnError`
-    - If true, plays the Vine boom sound effect when an error is produced by a linter or static analysis.
+    - If `true`, plays the Vine boom sound effect when an error is produced by a linter or static analysis.
     - Default: `true`  
 - `vineBoomErrors.soundEffectLocation`
     - If left blank, uses the Vine boom sound stored in the extension directory. You can put a path to another sound file to change the sound played.
@@ -21,6 +21,17 @@ Plays the Vine boom sound effect when your badly-written code generates errors.
     - The time, in milliseconds, to space apart each Vine boom.
     - Allowable values: `non-negative`
     - Default: `100`
+- `vineBoomErrors.players`
+    - The command-line players to play the Vine boom effect with. Uses the first one found to be present, searching from left to right. If one of the present players causes issues, remove it. If your player is not present, add it to the front. Must be compatible with MP3s.
+    - Default: `"mplayer"`, `"mpv"`, `"ffplay"`, `"omxplayer"`, `"cmdmp3win"`, `"cvlc"`, `"play"`, `"mpg123"`
+    - Reload for changes to take effect.
+- `vineBoomErrors.playerOptions`
+    - Command-line options to supply to the players. Keys are the names of the players and must be the same as in `vineBoomErrors.players`. At a minimum, any options that close the player after playing and prevent it from opening any windows are required if that is not the default behavior.
+    - Default: `"ffplay": ["-nodisp", "-autoexit"]`, `"cvlc": ["--play-and-exit"]`
+- `vineBoomErrors.minimumSeverity`
+    - The minimum diagnostic severity level at which to play the Vine boom. Choosing an option also chooses all of the options before it.
+    - Allowable values: `"Error"`, `"Warning"`, `"Information"`, `"Hint"`
+    - Default: `"Error"`
 
 ## How to build
 
@@ -43,14 +54,18 @@ code --install-extension <package name goes here>
 ```
 
 Make sure to reload or restart Visual Studio Code after installing .
-  
+
 ## Release Notes
 
-Initial release.
+- Switched from play-sound to find-exec for playing audio files as play-sound didn't offer much in terms of functionality, and most of what it offered had to be overwritten anyways.
+- Added ability to configure which audio players to use.
+- Added ability to configure what arguments are used with which audio players.
+- Configuration changes are now loaded live and only one remains that still requires reloading.
+- Added ability to configure at which error severity level to play the Vine boom.
 
 ### 0.1.0
 
-Initial release.
+- Initial release.
 
 ## Copyright
 
