@@ -33,8 +33,8 @@ let players = [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
 			  , "mpg123", "mpg321" /* Same player, different name */]
 
 // Various options to make sure players don't open any windows and exit when done.
-const playerOptions: Dictonary<string[]> = { ffplay: ["-nodisp", "-autoexit"]
-	                  					   , cvlc:   ["--play-and-exit"]};
+let playerOptions: Dictonary<string[]> = { ffplay: ["-nodisp", "-autoexit"]
+	                  					 , cvlc:   ["--play-and-exit"]};
 
 // Delay between consecutive file plays when using loopPlayFile().
 let delay = 100;
@@ -123,12 +123,13 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent) {
 
 
 export function activate(context: vscode.ExtensionContext) {
-	const configuration = vscode.workspace.getConfiguration("vineBoomErrors");
+	const configuration   = vscode.workspace.getConfiguration("vineBoomErrors");
 	const playBoomOnError = configuration.get("playBoomOnError");
 	_vineBoomFile = configuration.get("soundEffectLocation") || 
 					`${context.extensionPath}/audio/vineboom.mp3`;
-	delay = configuration.get("delay") || delay;
-	players = configuration.get("players") || players;
+	delay         = configuration.get("delay") || delay;
+	players       = configuration.get("players") || players;
+	playerOptions = configuration.get("playerOptions") || playerOptions;
 
 
 	const playBoom = commands.registerCommand("vineBoomErrors.playBoom", () =>
