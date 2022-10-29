@@ -1,5 +1,4 @@
 // TODO Possible add config option to select error severity.
-// TODO Ensure sound file exists.
 
 import * as vscode from "vscode";
 const commands  		 = vscode.commands;
@@ -10,6 +9,8 @@ const DiagnosticSeverity = vscode.DiagnosticSeverity;
 
 const findExec = require("find-exec");
 import { spawn } from "child_process";
+import * as fs from "fs";
+const R_OK = fs.constants.R_OK;
 
 /**
  * A mapping between string keys and a given type. Just objects with a specified value type.
@@ -47,7 +48,8 @@ let delay = 100;
  * Loads data from the configuration into the global namespace.
  * @param event Leave null if not calling from workspace.onDidChangeConfiguration().
  */
-function loadConfiguration(context: vscode.ExtensionContext, event: vscode.ConfigurationChangeEvent | null = null) {
+function loadConfiguration(context: vscode.ExtensionContext, 
+						   event: vscode.ConfigurationChangeEvent | null = null) {
 	// If a ConfigurationChangeEvent and it isn't for us we don't need to do anything.
 	if (event && !event.affectsConfiguration("vineBoomErrors"))
 		return;
@@ -61,8 +63,8 @@ function loadConfiguration(context: vscode.ExtensionContext, event: vscode.Confi
 																		 : playBoomOnError;
 
 	_vineBoomFile = configuration.get("soundEffectLocation") || 
-					`${context.extensionPath}/audio/vineboom.mp3`;
-
+				    `${context.extensionPath}/audio/vineboom.mp3`;
+	
 	const tempDelay = configuration.get("delay");
 	delay 			= typeof tempDelay === "number" ? tempDelay : delay;
 
@@ -98,6 +100,12 @@ function getPlayer(): string {
  * @param filePath audio file path.
  */
 async function playFile(filePath: string) {
+	try {
+		fs.accessSync(filePath, R_OK);
+	} catch (error) {
+		throw `An error occured while trying to open sound file "${_vineBoomFile}"; unable to open!". Description: ${error}`;
+	}
+
 	const player       = getPlayer();
 	const args         = (playerOptions[player] || []).concat(filePath);
 	const audioProcess = spawn(player, args);
@@ -106,7 +114,11 @@ async function playFile(filePath: string) {
 		window.showErrorMessage(`Something went wrong while trying to play "${filePath}" with ${player}. Error code: ${code}`));
 
 	const onClose = new Promise((resolve) =>
-		audioProcess.on('close', resolve));
+		audioProcess.on('close', resolve))
+		.then((code) => {
+			if (code !== 0)
+				window.showErrorMessage(`Something went wrong while trying to play "${filePath}" with ${player}. Error code: ${code}`);	
+		});
 	await onClose;
 }
 
