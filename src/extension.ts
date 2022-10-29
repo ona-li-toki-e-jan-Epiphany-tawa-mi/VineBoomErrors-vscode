@@ -1,5 +1,3 @@
-// TODO Possible add config option to select error severity.
-
 import * as vscode from "vscode";
 const commands  		 = vscode.commands;
 const window      		 = vscode.window;
@@ -20,6 +18,20 @@ const R_OK = fs.constants.R_OK;
 };
 
 
+
+/**
+ * Configuration option paths packed into a neat little enum.
+ */
+enum Configuration {
+	SECTION = "vineBoomErrors",
+
+	PLAY_BOOM_ON_ERROR    = "playBoomOnError",
+	SOUND_EFFECT_LOCATION = "soundEffectLocation",
+	DELAY 				  = "delay",
+	PLAYERS 			  = "players",
+	PLAYER_OPTIONS 		  = "playerOptions",
+	MINIMUM_SEVERITY 	  = "minimumSeverity"
+}
 
 // Whether to play the Vine boom if an error occurs.
 let playBoomOnError = true;
@@ -48,45 +60,45 @@ let minimumSeverity: string = "Error";
 function loadConfiguration(context: vscode.ExtensionContext, 
 						   event: vscode.ConfigurationChangeEvent | null = null) {
 	function throwNoFetch(configurationName: string, recievedValue: any) {
-		throw `ERROR: Unable to fetch configuration "vineBoomErrors.${configurationName}"! Recieved: ${playBoomOnError}`;
+		throw `ERROR: Unable to fetch configuration "${Configuration.SECTION}.${configurationName}"! Recieved: ${playBoomOnError}`;
 	}
 
 	// If a ConfigurationChangeEvent occurs and it isn't for us we don't need to do anything.
-	if (event && !event.affectsConfiguration("vineBoomErrors"))
+	if (event && !event.affectsConfiguration(Configuration.SECTION))
 		return;
 	
-	const configuration = workspace.getConfiguration("vineBoomErrors");
+	const configuration = workspace.getConfiguration(Configuration.SECTION);
 
 	// @ts-ignore
-	playBoomOnError = configuration.get("playBoomOnError");
+	playBoomOnError = configuration.get(Configuration.PLAY_BOOM_ON_ERROR);
 	if (typeof playBoomOnError !== "boolean")
-		throwNoFetch("playBoomOnError", playBoomOnError);
+		throwNoFetch(Configuration.PLAY_BOOM_ON_ERROR, playBoomOnError);
 
 	// @ts-ignore
-	vineBoomFile = configuration.get("soundEffectLocation")
+	vineBoomFile = configuration.get(Configuration.SOUND_EFFECT_LOCATION);
 	if (typeof vineBoomFile !== "string")
-		throwNoFetch("soundEffectLocation", vineBoomFile);
+		throwNoFetch(Configuration.SOUND_EFFECT_LOCATION, vineBoomFile);
 	vineBoomFile ||= `${context.extensionPath}/audio/vineboom.mp3`;
 	
 	// @ts-ignore
-	delay = configuration.get("delay");
+	delay = configuration.get(Configuration.DELAY);
 	if (typeof delay !== "number")
-		throwNoFetch("delay", delay);
+		throwNoFetch(Configuration.DELAY, delay);
 
 	// @ts-ignore
-	players = configuration.get("players");
+	players = configuration.get(Configuration.PLAYERS);
 	if (!Array.isArray(players))
-		throwNoFetch("players", players);
+		throwNoFetch(Configuration.PLAYERS, players);
 
 	// @ts-ignore
-	playerOptions = configuration.get("playerOptions");
+	playerOptions = configuration.get(Configuration.PLAYER_OPTIONS);
 	if (typeof playerOptions !== "object")
-		throwNoFetch("playerOptions", playerOptions);
+		throwNoFetch(Configuration.PLAYER_OPTIONS, playerOptions);
 
 	// @ts-ignore
-	minimumSeverity = configuration.get("minimumSeverity");
+	minimumSeverity = configuration.get(Configuration.MINIMUM_SEVERITY);
 	if (!(minimumSeverity in DiagnosticSeverity))
-		throwNoFetch("minimumSeverity", minimumSeverity);
+		throwNoFetch(Configuration.MINIMUM_SEVERITY, minimumSeverity);
 }
 
 
@@ -183,6 +195,11 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent) {
 
 
 
+/**
+ * VineBoomErrors, Plays the Vine boom sound effect when your badly-written code generates errors.
+ * 
+ * @author ona li toki e jan Epiphany tawa mi.
+ */
 export function activate(context: vscode.ExtensionContext) {
 	loadConfiguration(context);
 
