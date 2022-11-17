@@ -32,6 +32,9 @@
     "url": "https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/VineBoomErrors-vscode.git"
   },
   "homepage": "https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/VineBoomErrors-vscode",
+  "sponsor": {
+    "url": "https://github.com/sponsors/ona-li-toki-e-jan-Epiphany-tawa-mi"
+  },
   "activationEvents": [
     "onCommand:vineBoomErrors.playBoom",
     "onStartupFinished"
