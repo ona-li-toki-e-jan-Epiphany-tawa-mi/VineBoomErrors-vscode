@@ -61,7 +61,7 @@ let minimumSeverity: DiagnosticSeverity = DiagnosticSeverity.Error;
 function loadConfiguration(context: vscode.ExtensionContext, 
 						   event: vscode.ConfigurationChangeEvent | null = null) : void {
 	function throwNoFetch(configurationName: string, recievedValue: any) : void {
-		throw `ERROR: Unable to fetch configuration "${Configuration.SECTION}.${configurationName}"! Recieved: ${playBoomOnError}`;
+		throw new Error(`ERROR: Unable to fetch configuration "${Configuration.SECTION}.${configurationName}"! Recieved: ${playBoomOnError}`);
 	}
 
 	// If a ConfigurationChangeEvent occurs and it isn't for us we don't need to do anything.
@@ -124,7 +124,7 @@ async function playFile(filePath: string): Promise<void> {
 			window.showErrorMessage(`Something went wrong while trying to play "${filePath}" with ${playerSounder.getAvaliblePlayer()}. Error code: ${errorCode}`);	
 
 	} catch (error) {
-		`An error occured while trying to open sound file "${filePath}"; unable to open!". Description: ${error}`;
+		window.showErrorMessage(`An error occured while trying to open sound file "${filePath}"; unable to open!". Description: ${error}`);
 	}
 }
 
