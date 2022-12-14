@@ -88,7 +88,7 @@ function loadConfiguration(context: vscode.ExtensionContext,
 	delay = newDelay as number;
 
 	let newPlayers = configuration.get(Configuration.PLAYERS);
-	if (!Array.isArray(newPlayers))
+	if (!Array.isArray(newPlayers) || !newPlayers.every((element) => typeof element === "string"))
 		throwNoFetch(Configuration.PLAYERS, newPlayers);
 	players = (newPlayers as string[]).length > 0 ? newPlayers as string[]
 						                          : playerSounder.players;
@@ -96,7 +96,9 @@ function loadConfiguration(context: vscode.ExtensionContext,
 
 	// Merges specified options into all player options.
 	let newPlayerOptions = configuration.get(Configuration.PLAYER_OPTIONS);
-	if (typeof newPlayerOptions !== "object")
+	if (typeof newPlayerOptions !== "object" 
+			|| !Object.values(newPlayerOptions as object).every((value) => Array.isArray(value)
+																		&& value.every((element) => typeof element === "string")))
 		throwNoFetch(Configuration.PLAYER_OPTIONS, newPlayerOptions);
 	playerOptions = { ...playerSounder.playerOptions
 					, ...newPlayerOptions as object};
