@@ -2,7 +2,7 @@
   "name": "vineboomerrors",
   "displayName": "VineBoomErrors",
   "description": "Plays the Vine boom sound effect when your badly-written code generates errors",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "onalitokiejanEpiphanytawami",
   "author": {
     "name": "ona li toki e jan Epiphany tawa mi"
@@ -69,27 +69,22 @@
         },
         "vineBoomErrors.players": {
           "type": "array",
-          "default": [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win", "cvlc", "play", "mpg123"
-                     , "mpg321"],
-          "minItems": 1,
+          "default": [],
           "items": {
             "type": "string"
           },
-          "description": "The command-line players to play the Vine boom effect with. Uses the first one found to be present, searching from first to last. If one of the present players causes issues, remove it. If your player is not present, add it to the front. Must be compatible with MP3s. Reload for changes to take effect."
+          "description": "The command-line players to play the Vine boom effect with. Uses the first one found to be present, searching from first to last. If left blank, uses the player list supplied by player-sounder (https://www.npmjs.com/package/player-sounder). Must be compatible with MP3s."
         },
         "vineBoomErrors.playerOptions": {
           "type": "object",
-          "default": {
-            "ffplay": ["-nodisp", "-autoexit"],
-            "cvlc": ["--play-and-exit"]
-          },
+          "default": {},
           "additionalProperties": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "description": "Command-line options to supply to the players. Keys are the names of the players and must be the same as in vineBoomErrors.players. At a minimum, any options that close the player after playing and prevent it from opening any windows are required if that is not the default behavior."
+          "description": "Command-line options to supply to the players. Keys are the names of the players and must be the same as in vineBoomErrors.players. At a minimum, any options that close the player after playing and prevent it from opening any windows are required if that is not the default behavior. Uses the player options supplied by player-sounder (https://www.npmjs.com/package/player-sounder) by default. Any options supplied here will superceed those supplied by player-sounder."
         },
         "vineBoomErrors.minimumSeverity": {
           "type": "string",
@@ -134,6 +129,6 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
-    "find-exec": "^1.0.2"
+    "player-sounder": "^1.0.0"
   }
 }

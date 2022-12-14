@@ -1,21 +1,15 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable curly */
 import * as vscode from "vscode";
 const commands  		 = vscode.commands;
 const window      		 = vscode.window;
 const languages			 = vscode.languages;
 const workspace          = vscode.workspace;
 const DiagnosticSeverity = vscode.DiagnosticSeverity;
+type  DiagnosticSeverity = vscode.DiagnosticSeverity; 
 
-const findExec = require("find-exec");
-import { spawn } from "child_process";
-import * as fs from "fs";
-const R_OK = fs.constants.R_OK;
-
-/**
- * A mapping between string keys and a given type. Just objects with a specified value type.
- */
- interface Dictionary<Type> {
-	[key: string]: Type;
-};
+import * as playerSounder from "player-sounder";
+type Dictionary<Type> = playerSounder.Dictionary<Type>;
 
 
 
@@ -23,7 +17,7 @@ const R_OK = fs.constants.R_OK;
  * Configuration option paths packed into a neat little enum.
  */
 enum Configuration {
-	SECTION = "vineBoomErrors",
+	SECTION               = "vineBoomErrors",
 
 	PLAY_BOOM_ON_ERROR    = "playBoomOnError",
 	SOUND_EFFECT_LOCATION = "soundEffectLocation",
@@ -33,33 +27,40 @@ enum Configuration {
 	MINIMUM_SEVERITY 	  = "minimumSeverity"
 }
 
-// Whether to play the Vine boom if an error occurs.
-let playBoomOnError = true;
-// The sound effect to use. Defaults to the Vine boom.
-// @ts-ignore
-let vineBoomFile: string = undefined;
-// Players with which to play the Vine boom. Must be mp3 compatible.
-// TODOO: omxplayer and cmdmp3win have not been tested.
-let players = [ "mplayer", "mpv", "ffplay", "omxplayer", "cmdmp3win"
-              , "cvlc" /* from VLC */, "play" /* from SoX(?) */
-			  , "mpg123", "mpg321" /* Same player, different name */];
-// Various options to make sure players don't open any windows and exit when done.
-let playerOptions: Dictionary<string[]> = { ffplay: ["-nodisp", "-autoexit"]
-	                  					  , cvlc:   ["--play-and-exit"]};
-// Delay between consecutive file plays when using loopPlayFile().
-let delay = 100;
-// The minimum diagnostic severity level at which to play the Vine boom.
-let minimumSeverity: string = "Error";
+/**
+ * Whether to play the Vine boom if an error occurs.  
+ */ 
+let playBoomOnError: boolean = true;
+/**
+ * The sound effect to use. Defaults to the Vine boom.
+ */
+let vineBoomFile: string = "";
+/**
+ * Players with which to play the Vine boom. Must be mp3 compatible.
+ */
+let players: string[] = playerSounder.players;
+/**
+ * Various options to make sure players don't open any windows and exit when done.
+ */
+let playerOptions: Dictionary<string[]> = playerSounder.playerOptions;
+/**
+ * Delay between consecutive file plays when using loopPlayFile().
+ */
+let delay: number = 100;
+/**
+ * The minimum diagnostic severity level at which to play the Vine boom.
+ */
+let minimumSeverity: DiagnosticSeverity = DiagnosticSeverity.Error;
 
 /**
  * Loads data from the configuration into the global namespace.
  * Must be called once at activation.
  * 
- * @param event Leave null if not calling from workspace.onDidChangeConfiguration().
+ * @param event Leave null if not calling from {@link vscode#workspace#onDidChangeConfiguration}.
  */
 function loadConfiguration(context: vscode.ExtensionContext, 
-						   event: vscode.ConfigurationChangeEvent | null = null) {
-	function throwNoFetch(configurationName: string, recievedValue: any) {
+						   event: vscode.ConfigurationChangeEvent | null = null) : void {
+	function throwNoFetch(configurationName: string, recievedValue: any) : void {
 		throw `ERROR: Unable to fetch configuration "${Configuration.SECTION}.${configurationName}"! Recieved: ${playBoomOnError}`;
 	}
 
@@ -69,83 +70,60 @@ function loadConfiguration(context: vscode.ExtensionContext,
 	
 	const configuration = workspace.getConfiguration(Configuration.SECTION);
 
-	// @ts-ignore
-	playBoomOnError = configuration.get(Configuration.PLAY_BOOM_ON_ERROR);
-	if (typeof playBoomOnError !== "boolean")
-		throwNoFetch(Configuration.PLAY_BOOM_ON_ERROR, playBoomOnError);
 
-	// @ts-ignore
-	vineBoomFile = configuration.get(Configuration.SOUND_EFFECT_LOCATION);
-	if (typeof vineBoomFile !== "string")
-		throwNoFetch(Configuration.SOUND_EFFECT_LOCATION, vineBoomFile);
-	vineBoomFile ||= `${context.extensionPath}/audio/vineboom.mp3`;
+	let newPlayBoomOnError = configuration.get(Configuration.PLAY_BOOM_ON_ERROR);
+	if (typeof newPlayBoomOnError !== "boolean")
+		throwNoFetch(Configuration.PLAY_BOOM_ON_ERROR, newPlayBoomOnError);
+	playBoomOnError = newPlayBoomOnError as boolean;
+
+	let newVineBoomFile = configuration.get(Configuration.SOUND_EFFECT_LOCATION);
+	if (typeof newVineBoomFile !== "string")
+		throwNoFetch(Configuration.SOUND_EFFECT_LOCATION, newVineBoomFile);
+	vineBoomFile = newVineBoomFile ? newVineBoomFile as string
+	  							   : `${context.extensionPath}/audio/vineboom.mp3`;
 	
-	// @ts-ignore
-	delay = configuration.get(Configuration.DELAY);
-	if (typeof delay !== "number")
-		throwNoFetch(Configuration.DELAY, delay);
+	let newDelay = configuration.get(Configuration.DELAY);
+	if (typeof newDelay !== "number")
+		throwNoFetch(Configuration.DELAY, newDelay);
+	delay = newDelay as number;
 
-	// @ts-ignore
-	players = configuration.get(Configuration.PLAYERS);
-	if (!Array.isArray(players))
-		throwNoFetch(Configuration.PLAYERS, players);
+	let newPlayers = configuration.get(Configuration.PLAYERS);
+	if (!Array.isArray(newPlayers))
+		throwNoFetch(Configuration.PLAYERS, newPlayers);
+	players = (newPlayers as string[]).length > 0 ? newPlayers as string[]
+						                          : playerSounder.players;
+	playerSounder.reselectPlayer(players);
 
-	// @ts-ignore
-	playerOptions = configuration.get(Configuration.PLAYER_OPTIONS);
-	if (typeof playerOptions !== "object")
-		throwNoFetch(Configuration.PLAYER_OPTIONS, playerOptions);
-
-	// @ts-ignore
-	minimumSeverity = configuration.get(Configuration.MINIMUM_SEVERITY);
-	if (!(minimumSeverity in DiagnosticSeverity))
-		throwNoFetch(Configuration.MINIMUM_SEVERITY, minimumSeverity);
+	// Merges specified options into all player options.
+	let newPlayerOptions = configuration.get(Configuration.PLAYER_OPTIONS);
+	if (typeof newPlayerOptions !== "object")
+		throwNoFetch(Configuration.PLAYER_OPTIONS, newPlayerOptions);
+	playerOptions = { ...playerSounder.playerOptions
+					, ...newPlayerOptions as object};
+	
+	let newMinimumSeverity = configuration.get(Configuration.MINIMUM_SEVERITY);
+	if (typeof newMinimumSeverity !== "string" || !(newMinimumSeverity as string in DiagnosticSeverity))
+		throwNoFetch(Configuration.MINIMUM_SEVERITY, newMinimumSeverity);
+	minimumSeverity = DiagnosticSeverity[newMinimumSeverity as keyof typeof DiagnosticSeverity];
 }
 
 
 
-let _player: string | null = null;
 /**
- * Gets the first available player on the system.
- *
- * @returns The player.
- * @throws If there are no available players.
- */
-function getPlayer(): string {
-	if (!_player) {
-		_player = findExec(players);
-
-		if (!_player)
-			throw `Unable to find any sound players on the system! (attempted to look for ${players})`;
-	}
-
-	return _player;
-}
-
-/**
- * Plays the given audio file with one of the available players.
+ * Plays the given audio file with one of the available players. Returns when done.
  * @param filePath audio file path.
  */
-async function playFile(filePath: string) {
+async function playFile(filePath: string): Promise<void> {
 	try {
-		fs.accessSync(filePath, R_OK);
+		let audioProcess = playerSounder.playFile(filePath, playerOptions);
+		
+		let errorCode = await playerSounder.onClose(audioProcess);
+		if (errorCode !== 0)
+			window.showErrorMessage(`Something went wrong while trying to play "${filePath}" with ${playerSounder.getAvaliblePlayer()}. Error code: ${errorCode}`);	
+
 	} catch (error) {
-		throw `An error occured while trying to open sound file "${vineBoomFile}"; unable to open!". Description: ${error}`;
+		`An error occured while trying to open sound file "${filePath}"; unable to open!". Description: ${error}`;
 	}
-
-	const player       = getPlayer();
-	const args         = (playerOptions[player] || []).concat(filePath);
-	const audioProcess = spawn(player, args);
-
-	audioProcess.on('error', (code: number) =>
-		window.showErrorMessage(`Something went wrong while trying to play "${filePath}" with ${player}. Error code: ${code}`));
-
-	const onClose = new Promise((resolve) =>
-		audioProcess.on('close', resolve))
-		.then((code) => {
-			if (code !== 0)
-				window.showErrorMessage(`Something went wrong while trying to play "${filePath}" with ${player}. Error code: ${code}`);	
-		});
-	await onClose;
 }
 
 /**
@@ -155,7 +133,7 @@ async function playFile(filePath: string) {
  * @param count     number of times to play it.
  * @param delay     amount of time to space out each play by.
  */
-function loopPlayFile(filePath: string, count: number, delay: number) {
+function loopPlayFile(filePath: string, count: number, delay: number) : void {
 	if (count === 0)
 		return;
 
@@ -172,14 +150,13 @@ let errorHistory: Dictionary<number> = {};
 /**
  * Produces a Vine boom for every *new* error found from static analysis.
  */
-function vineboomForErrors(event: vscode.DiagnosticChangeEvent) {
+function vineboomForErrors(event: vscode.DiagnosticChangeEvent) : void {
 	for (const URI of event.uris) {
 		const URIString = URI.toString();
 		
 		let errors = 0;
 		for (const diagnostic of languages.getDiagnostics(URI))
-			// @ts-ignore
-			if (diagnostic.severity <= DiagnosticSeverity[minimumSeverity])
+			if (diagnostic.severity <= minimumSeverity)
 				errors++;
 
 		let boomableErrors = errors;
@@ -200,7 +177,7 @@ function vineboomForErrors(event: vscode.DiagnosticChangeEvent) {
  * 
  * @author ona li toki e jan Epiphany tawa mi.
  */
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext) : void {
 	loadConfiguration(context);
 
 	const playBoom = commands.registerCommand("vineBoomErrors.playBoom", () =>
@@ -216,4 +193,4 @@ export function activate(context: vscode.ExtensionContext) {
 		loadConfiguration(context, event));
 }
 
-export function deactivate() {}
+export function deactivate() : void {}
