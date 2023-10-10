@@ -1,5 +1,7 @@
 ![VineBoomErrors Logo](images/icon.png)
 
+**!!NOTICE!!:** This will not be updated as I no longer use VSCode.
+
 # VineBoomErrors
 
 Plays the Vine boom sound effect when your badly-written code generates errors.
@@ -13,7 +15,7 @@ Plays the Vine boom sound effect when your badly-written code generates errors.
 
 - `vineBoomErrors.playBoomOnError`
     - If `true`, plays the Vine boom sound effect when an error is produced by a linter or static analysis.
-    - Default: `true`  
+    - Default: `true`
 - `vineBoomErrors.soundEffectLocation`
     - If left blank, uses the Vine boom sound stored in the extension directory. You can put a path to another sound file to change the sound played.
     - Default: `""`
